@@ -12,15 +12,14 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { authClient } from "@/lib/auth-client"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { OctagonAlertIcon } from "lucide-react"
 import Link from "next/link"
+import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { signInSchema } from "../../validation/sign-in-validation"
-import { useState } from "react"
-import { authClient } from "@/lib/auth-client"
-import { useRouter } from "next/navigation"
-import { zodResolver } from "@hookform/resolvers/zod"
 
 const SignInView = () => {
   const signInForm = useForm<z.infer<typeof signInSchema>>({
@@ -30,7 +29,6 @@ const SignInView = () => {
       password: "",
     },
   })
-  const router = useRouter()
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(false)
 
@@ -42,10 +40,11 @@ const SignInView = () => {
         {
           email: data.email,
           password: data.password,
+          callbackURL:"/"
         },
         {
           onSuccess: () => {
-            router.push("/")
+           
           },
           onError: ({ error }) => {
             setError(error?.message || "An error occurred")
@@ -58,6 +57,31 @@ const SignInView = () => {
       setIsLoading(false)
     }
   }
+  const onSocial = (provider : "github") => {
+    try {
+      setError(null)
+      setIsLoading(true)
+      authClient?.signIn.social(
+        {
+          provider,
+          callbackURL:"/"
+        },
+        {
+          onSuccess: () => {},
+          onError: ({ error }) => {
+            setError(error?.message || "An error occurred")
+          },
+        }
+      )
+    } catch {
+      setError("An error occurred")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+
+  
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-white to-pink-50 dark:from-black dark:to-zinc-900 p-4">
@@ -143,21 +167,20 @@ const SignInView = () => {
                   Or continue with
                 </span>
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                <Button variant="outline" className="w-full">
+              <div className="grid grid-cols-1 gap-2">
+                <Button variant="outline" className="w-full cursor-pointer" onClick={()=>onSocial("github")}>
                   {/*   <GithubIcon className="h-4 w-4" /> */}
                   <span>Github</span>
                 </Button>
-                <Button variant="outline" className="w-full">
-                  {/* <GoogleIcon className="h-4 w-4" /> */}
+             {/*    <Button variant="outline" className="w-full cursor-pointer">
                   <span>Google</span>
-                </Button>
+                </Button> */}
               </div>
             </form>
           </Form>
           <div className="text-center text-sm text-muted-foreground pt-4">
             Don&apos;t have an account?{" "}
-            <Link href="/auth/sign-up" className="text-primary hover:underline">
+            <Link href="/sign-up" className="text-primary hover:underline">
               Sign up
             </Link>
           </div>
