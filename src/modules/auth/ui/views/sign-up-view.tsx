@@ -1,28 +1,31 @@
 /* eslint-disable @next/next/no-img-element */
 "use client"
-import { useState } from "react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { useForm } from "react-hook-form"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Form,
+  FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormControl,
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { authClient } from "@/lib/auth-client"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { OctagonAlertIcon } from "lucide-react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useState } from "react"
+import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { signUpSchema } from "../../validation/sign-up-validation"
-import { authClient } from "@/lib/auth-client"
-import { OctagonAlertIcon } from "lucide-react"
-import { zodResolver } from "@hookform/resolvers/zod"
+import { useRouter } from "next/navigation"
 
 const SignUpView = () => {
+
+  const router = useRouter()
+
   const signUpForm = useForm<z.infer<typeof signUpSchema>>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
@@ -32,7 +35,6 @@ const SignUpView = () => {
       confirmPassword: "",
     },
   })
-  const router = useRouter()
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(false)
 
@@ -45,6 +47,7 @@ const SignUpView = () => {
           name: data.name,
           email: data.email,
           password: data.password,
+          callbackURL: "/"
         },
         {
           onSuccess: () => {
@@ -61,6 +64,33 @@ const SignUpView = () => {
       setIsLoading(false)
     }
   }
+
+  const onSocial = (provider: "github") => {
+    try {
+      setError(null)
+      setIsLoading(true)
+      authClient?.signIn.social(
+        {
+          provider,
+          callbackURL: "/"
+        },
+        {
+          onSuccess: () => {
+            router.push("/")
+          },
+          onError: ({ error }) => {
+            setError(error?.message || "An error occurred")
+          },
+        }
+      )
+    } catch {
+      setError("An error occurred")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-white to-pink-50 dark:from-black dark:to-zinc-900 p-4">
@@ -184,21 +214,21 @@ const SignUpView = () => {
                   Or continue with
                 </span>
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                <Button variant="outline" className="w-full">
+              <div className="grid grid-cols-1 gap-2">
+                <Button variant="outline" className="w-full cursor-pointer" onClick={() => onSocial("github")}>
                   {/*   <GithubIcon className="h-4 w-4" /> */}
                   <span>Github</span>
                 </Button>
-                <Button variant="outline" className="w-full">
-                  {/* <GoogleIcon className="h-4 w-4" /> */}
+                {/*   <Button variant="outline" className="w-full cursor-pointer">
+                  
                   <span>Google</span>
-                </Button>
+                </Button> */}
               </div>
             </form>
           </Form>
           <div className="text-center text-sm text-muted-foreground pt-4">
             Don&apos;t have an account?{" "}
-            <Link href="/auth/sign-in" className="text-primary hover:underline">
+            <Link href="/sign-in" className="text-primary hover:underline">
               Sign In
             </Link>
           </div>
